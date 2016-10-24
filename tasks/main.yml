@@ -4,3 +4,8 @@
   - name: ANSIBLE PYTHON | install python 2
     raw: test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)
     become: yes
+    register: python2install
+
+  - name: gather facts
+    setup:
+    when: python2install.changed

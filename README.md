@@ -14,18 +14,20 @@ Shared connection toclosed.
 , "module_stdout": "/bin/sh: 1: /usr/bin/python: not found\r\n", "msg": "MODULE FAILURE"}
 ```
 
-In this case either use this role, or just add following fragment to 
+In this case either use this role, or just add following fragment to
 
 ```YAML
 
  pre_tasks:
 
   - name: ANSIBLE PYTHON | install python 2
-    raw: test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal) 
+    raw: test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)
     become: yes
 ```
 
-Goal is to skip any sophisticated tasks ansible uses python for.
+Goal is to skip any sophisticated tasks ansible uses python for. (For the same reason you also need to set `gather_facts: False`)
+
+In order to gather facts, when py2 is installed
 
 At the same moment, Xenial comes with python, located in /usr/bin/python3.
 Potentially, you can modify ansible to use python3.
@@ -47,15 +49,111 @@ Simple
 
 Advanced:
 
+via role
+
 
 ```YAML
+---
+- hosts: bootstrapped_box
+  gather_facts: False
+
+  vars:
+    - root_dir: "{{ playbook_dir }}"
+
+    - galaxy_deploy_user: galaxy
+      galaxy_deploy_authorized_keys:
+        - "{{playbook_dir}}/files/ssh_keys/vyacheslav1.pub"  # vyacheslav 1
+        - "{{playbook_dir}}/files/ssh_keys/vyacheslav2.pub"  # vyacheslav 2
+        - "{{playbook_dir}}/files/ssh_keys/vyacheslav3.pub"  # vyacheslav 3
+        - "{{playbook_dir}}/files/ssh_keys/vyacheslav4.pub"  # vyacheslav 4
+
+  vars_files:
+    - "project_common_vars.yml"
+
+
+  pre_tasks:
+    - debug: msg="Pre tasks section"
+
   roles:
     - {
-        role: "sa-python-minimal"
+        role: "sa-python-minimal",
+      }      
+    - {
+        role: "sa-box-bootstrap",
+        deploy_user: "{{deploy_user}}",
+        deploy_user_key: "{{playbook_dir}}/files/ssh_keys/deploy_rsa",
+        deploy_user_pub_key: "{{playbook_dir}}/files/ssh_keys/deploy_rsa.pub",
+        deploy_user_authorized_keys: "{{deploy_authorized_keys}}",
+
+        option_copy_initial_authorized_keys: true,
+        option_enforce_ssh_keys_login: true,
+        option_file2ban: false,
+        option_ufw: true,
+        option_monit: false
       }
+
+
+
+  tasks:
+
+    - debug: msg="Tasks section"
+
 ```
 
 
+embedded:
 
 
 
+```YAML
+---
+- hosts: bootstrapped_box
+  gather_facts: False
+
+  vars:
+    - root_dir: "{{ playbook_dir }}"
+
+    - galaxy_deploy_user: galaxy
+      galaxy_deploy_authorized_keys:
+        - "{{playbook_dir}}/files/ssh_keys/vyacheslav1.pub"  # vyacheslav 1
+        - "{{playbook_dir}}/files/ssh_keys/vyacheslav2.pub"  # vyacheslav 2
+        - "{{playbook_dir}}/files/ssh_keys/vyacheslav3.pub"  # vyacheslav 3
+        - "{{playbook_dir}}/files/ssh_keys/vyacheslav4.pub"  # vyacheslav 4
+
+  vars_files:
+    - "project_common_vars.yml"
+
+
+  pre_tasks:
+    - debug: msg="Pre tasks section"
+
+    - name: ANSIBLE PYTHON | install python 2
+      raw: test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)
+      become: yes
+
+    - name: gather facts
+      setup:
+
+
+  roles:
+    - {
+        role: "sa-box-bootstrap",
+        deploy_user: "{{deploy_user}}",
+        deploy_user_key: "{{playbook_dir}}/files/ssh_keys/deploy_rsa",
+        deploy_user_pub_key: "{{playbook_dir}}/files/ssh_keys/deploy_rsa.pub",
+        deploy_user_authorized_keys: "{{deploy_authorized_keys}}",
+
+        option_copy_initial_authorized_keys: true,
+        option_enforce_ssh_keys_login: true,
+        option_file2ban: false,
+        option_ufw: true,
+        option_monit: false
+      }
+
+
+
+  tasks:
+
+    - debug: msg="Tasks section"
+
+```
