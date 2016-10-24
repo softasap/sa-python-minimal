@@ -1,0 +1,5 @@
+---
+# tasks file for sa-ansible-python
+
+  - name: ANSIBLE PYTHON | install python 2
+    raw: sudo bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)"
