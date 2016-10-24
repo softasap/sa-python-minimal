@@ -21,7 +21,8 @@ In this case either use this role, or just add following fragment to
  pre_tasks:
 
   - name: ANSIBLE PYTHON | install python 2
-    raw: sudo bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)"
+    raw: test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal) 
+    become: yes
 ```
 
 Goal is to skip any sophisticated tasks ansible uses python for.
